@@ -8,21 +8,31 @@ class Application
 
     public function __construct($routes = [])
     {
-        $this->routes = $routes;
+        foreach ($routes as $route) {
+            list($method, $uri, $function) = $route;
+            $this->addRoute($method, $uri, $function);
+        }
     }
 
     public function addRoute($method, $uri, $function)
     {
-        $this->routes[] = [$method, $uri, $function];
+        $this->routes[] = [
+            $method,
+            preg_replace('|{(.*?)}|i', '(?P<$1>.+)', $uri),
+            $function
+        ];
     }
+
     public function get($uri, $function)
     {
         $this->addRoute('GET', $uri, $function);
     }
+
     public function put($uri, $function)
     {
         $this->addRoute('PUT', $uri, $function);
     }
+
     public function post($uri, $function)
     {
         $this->addRoute('POST', $uri, $function);
@@ -33,19 +43,18 @@ class Application
         $serverMethod = $_SERVER['REQUEST_METHOD'];
         $serverUri = $_SERVER['REQUEST_URI'];
 
-        //var_dump($serverMethod, $serverUri);
         foreach ($this->routes as $route) {
-            list($routeMethod, $routeUri, $function) =  $route;
+            list($routeMethod, $routeUri, $function) = $route;
 
-            $routeUri = preg_quote($routeUri, '/');
+            $routeUri = str_replace('/', '\/', $routeUri);
 
-            //var_dump($routeUri, $serverUri, preg_match('/^$routeUri$/i', $serverUri));
-
-            if ($serverMethod == $routeMethod && preg_match("/^$routeUri$/i", $serverUri)) {
-
-                $rawData =  file_get_contents('php://input');
-                $function();
-                return;
+            $matches = [];
+            if ($serverMethod == $routeMethod && preg_match("/^$routeUri$/i", $serverUri, $matches)) {
+                $stringMathches = array_filter($matches, function ($key) {
+                    return !is_numeric($key);
+                }, ARRAY_FILTER_USE_KEY);
+                $rawData = file_get_contents('php://input');
+                echo $function($rawData, $stringMathches);
             }
         }
     }
