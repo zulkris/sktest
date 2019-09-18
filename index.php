@@ -19,7 +19,7 @@ $app->get('/users/{user_id}/services/{service_id}/tarifs', function ($data, $par
     header('Content-type: application/json');
     if (empty($userTarif)) {
         header('HTTP/1.1 404 Not Found');
-        return json_encode(['result' => 'error', 'message' => 'user not found']);
+        return json_encode(['result' => 'error', 'message' => 'not data found for this parameters']);
     }
 
     $availableTarifs = $db->getAvailableTarifs($userId, $serviceId, true);
@@ -32,7 +32,7 @@ $app->get('/users/{user_id}/services/{service_id}/tarifs', function ($data, $par
         'tarifs' => $availableTarifs
     ];
 
-    return json_encode($result);
+    echo json_encode($result);
 });
 
 
@@ -62,7 +62,7 @@ $app->put('/users/{user_id}/services/{service_id}/tarif', function ($data, $para
     }
 
     $db->setServiceTarif($serviceId, $tarifsToSet);
-    return json_encode(['result' => 'ok']);
+    echo json_encode(['result' => 'ok']);
 });
 
 
