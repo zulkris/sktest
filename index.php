@@ -50,6 +50,8 @@ $app->put('/users/{user_id}/services/{service_id}/tarif', function ($data, $para
     $db = new DB(DB_HOST, DB_NAME, DB_USER, DB_PASSWORD);
 
     $availableTarifs =  $db->getAvailableTarifs($userId, $serviceId, false);
+//var_dump($availableTarifs); die;
+
     $tarifsToSet = array_filter($availableTarifs, function($item) use ($tarifId) {
         return $tarifId == $item['ID'] ;
     });
@@ -61,10 +63,9 @@ $app->put('/users/{user_id}/services/{service_id}/tarif', function ($data, $para
         return json_encode(['result' => 'error']);
     }
 
-    $db->setServiceTarif($serviceId, $tarifsToSet);
+    $db->setServiceTarifs($serviceId, $tarifsToSet);
     echo json_encode(['result' => 'ok']);
 });
 
 
 $app->run();
-

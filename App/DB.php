@@ -29,7 +29,7 @@ class DB
         return empty($userTarifs) ? [] : $userTarifs[0];
     }
 
-    function getAvailableTarifs($userId, $serviceId, $modifyFields = false)
+    public function getAvailableTarifs($userId, $serviceId, $modifyFields = false)
     {
         $stmt = $this->pdo->prepare("select ID, title, price, pay_period, speed
          from tarifs where tarif_group_id IN
@@ -55,15 +55,15 @@ class DB
         return $tarif;
     }
 
-
-    public function setServiceTarif($serviceId, $tarifsToSet)
+    public function setServiceTarifs($serviceId, $tarifsToSet)
     {
-        $stmt = $this->pdo->prepare("update services SET tarif_id= ?, payday= ? where ID = ?");
+        $stmt = $this->pdo->prepare("UPDATE services SET tarif_id = ?, payday = ? WHERE ID = ?");
 
         foreach ($tarifsToSet as $tarif) {
-            $tarifId = $tarif['ID'];
-            $payday = '2019-06-06'; $tarif['new_payday'];
-            $stmt->execute([$tarifId, $payday, $serviceId]);
+            $payDayTimeStamp = strtotime("today midnight +{$tarif['pay_period']} months");
+            $payday = date('Y-m-d', $payDayTimeStamp);
+
+            $stmt->execute([$tarif['ID'], $payday, $serviceId]);
         }
     }
 
