@@ -61,10 +61,10 @@ class DB
         $stmt = $this->pdo->prepare("update services SET tarif_id= ?, payday= ? where ID = ?");
 
         foreach ($tarifsToSet as $tarif) {
-            $payday =
-                $stmt->execute([$tarif['ID'], $tarif['new_payday'], $serviceId]);
+            $tarifId = $tarif['ID'];
+            $payday = '2019-06-06'; $tarif['new_payday'];
+            $stmt->execute([$tarifId, $payday, $serviceId]);
         }
-
     }
 
 }
