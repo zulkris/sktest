@@ -18,26 +18,53 @@ class DB
         $this->pdo = new PDO("mysql:host=$dbhost;dbname=$dbname;charset=utf8", $dbuser, $dbpass, $opt);
     }
 
-    public function getUserTarif($userId)
+    public function getUserTarif($userId, $serviceId)
     {
         $stmt = $this->pdo->prepare('select tarifs.* from services inner join tarifs
-            on tarifs.ID= services.tarif_id where user_id = ?');
-        $stmt->execute([$userId]);
+            on tarifs.ID= services.tarif_id where user_id = ? and services.ID = ?');
 
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $stmt->execute([$userId, $serviceId]);
+
+        $userTarifs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return empty($userTarifs) ? [] : $userTarifs[0];
+    }
+
+    function getAvailableTarifs($userId, $serviceId, $modifyFields = false)
+    {
+        $stmt = $this->pdo->prepare("select ID, title, price, pay_period, speed
+         from tarifs where tarif_group_id IN
+          (select tarif_group_id from tarifs where tarifs.ID IN
+            (select tarif_id from services where user_id = ? AND services.ID = ?))");
+
+        $stmt->execute([$userId, $serviceId]);
+        $tarifs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return $modifyFields ? array_map([$this, 'modifyTarifFields'], $tarifs) : $tarifs;
+    }
+
+    private function modifyTarifFields(array $tarif)
+    {
+        $tarif['price'] = (int)$tarif['price'];
+
+        $months = $tarif['pay_period'];
+        $tarif['pay_period'] = (string)$months;
+
+        $payTime = strtotime("today midnight +$months months");
+        $tarif['new_payday'] = $payTime . date('O', $payTime);
+
+        return $tarif;
     }
 
 
-    function getAvailableTarifs($userId)
+    public function setServiceTarif($serviceId, $tarifsToSet)
     {
-        $stmt = $this->pdo->prepare('select * from tarifs
-          where tarif_group_id =
-              (select tarif_group_id from tarifs where ID =
-                  (select tarif_id from services where user_id = ?))');
+        $stmt = $this->pdo->prepare("update services SET tarif_id= ?, payday= ? where ID = ?");
 
-        $stmt->execute([$userId]);
+        foreach ($tarifsToSet as $tarif) {
+            $payday =
+                $stmt->execute([$tarif['ID'], $tarif['new_payday'], $serviceId]);
+        }
 
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
 }

@@ -57,5 +57,8 @@ class Application
                 echo $function($rawData, $stringMathches);
             }
         }
+
+
+        return;
     }
 }

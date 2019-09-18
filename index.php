@@ -8,27 +8,63 @@ require_once __DIR__ . '/App/DB.php';
 
 $app = new Application();
 
-$app->put('/users/{user_id}/services/{service_id}/tarif', function($data, $params){
+$app->get('/users/{user_id}/services/{service_id}/tarifs', function ($data, $params) {
     $userId = $params['user_id'];
     $serviceId = $params['service_id'];
-    //return var_export($params);
+
     $db = new DB(DB_HOST, DB_NAME, DB_USER, DB_PASSWORD);
 
-    $userTarif = $db->getUserTarif($)
-    $rows = $db->getAvailableTarifs($params['user_id']);
-    return var_export($rows);
+    $userTarif = $db->getUserTarif($userId, $serviceId);
 
+    header('Content-type: application/json');
+    if (empty($userTarif)) {
+        header('HTTP/1.1 404 Not Found');
+        return json_encode(['result' => 'error', 'message' => 'user not found']);
+    }
+
+    $availableTarifs = $db->getAvailableTarifs($userId, $serviceId, true);
+
+    $result = [
+        'result' => 'ok',
+        'title' => $userTarif['title'],
+        'link' => $userTarif['link'],
+        'speed' => $userTarif['speed'],
+        'tarifs' => $availableTarifs
+    ];
+
+    return json_encode($result);
 });
 
-/*
-$app->get('/users/{user_id}/services/{service_id}/tarifs', function($data, $params){
-    echo 'im GET!' . PHP_EOL;
+
+$app->put('/users/{user_id}/services/{service_id}/tarif', function ($data, $params) {
+
+    $decodedData = json_decode($data, true);
+    if (empty($decodedData)) {
+        header('HTTP/1.1 204 No Content');
+        return json_encode(['result' => 'error']);
+    }
+    $tarifId = $decodedData['tarif_id'];
+    $userId = $params['user_id'];
+    $serviceId = $params['service_id'];
+
+    $db = new DB(DB_HOST, DB_NAME, DB_USER, DB_PASSWORD);
+
+    $availableTarifs =  $db->getAvailableTarifs($userId, $serviceId, false);
+    $tarifsToSet = array_filter($availableTarifs, function($item) use ($tarifId) {
+        return $tarifId == $item['ID'] ;
+    });
+
+    header('Content-type: application/json');
+
+    if (empty($tarifsToSet)) {
+        header('HTTP/1.1 404 Not Found');
+        return json_encode(['result' => 'error']);
+    }
+
+    $db->setServiceTarif($serviceId, $tarifsToSet);
+    return json_encode(['result' => 'ok']);
 });
 
-$app->post('/', function(){
-    echo 'im POST!' . PHP_EOL;
-});
-*/
 
 $app->run();
 
