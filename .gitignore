@@ -1,1 +1,2 @@
-./idea
+.idea/
+config/db_cfg.php

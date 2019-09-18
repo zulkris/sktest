@@ -54,11 +54,12 @@ class Application
                     return !is_numeric($key);
                 }, ARRAY_FILTER_USE_KEY);
                 $rawData = file_get_contents('php://input');
-                echo $function($rawData, $stringMathches);
+                $function($rawData, $stringMathches);
+                exit();
             }
         }
 
-
+        header('HTTP/1.0 404 Not Found');
         return;
     }
 }
